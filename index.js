@@ -20,9 +20,18 @@ app.use(cors());
 app.use(helmet());
 
 
+const allowedOrigins = ['http://localhost:3000', 'https://www.candidate.live/'];
+
 app.use(cors({
-  origin: '*', 
-  credentials: true }));
+  origin: function (origin, callback) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 app.use(session({
   secret: 'chetansingh24', 
@@ -63,7 +72,6 @@ app.get('/oauth2callback', async (req, res) => {
   console.log('Received authorization code:', code);
 
   try {
-    // Exchange code for access token
     const { tokens } = await oauth2Client.getToken(code);
     console.log('Tokens received from Google:', tokens); 
 
@@ -290,53 +298,6 @@ app.post('/create-event', async (req, res) => {
 });
 
 
-// app.get('/list-events', async (req, res) => {
-//   try {
-//     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-
-//     // List events from the user's primary calendar
-//     const response = await calendar.events.list({
-//       calendarId: 'primary',   // For the primary calendar
-//       timeMin: new Date().toISOString(), // Fetch events starting from now
-//       maxResults: 10,          // Adjust based on how many events you want
-//       singleEvents: true,      // Only return single events (not recurring events)
-//       orderBy: 'startTime',    // Order events by start time
-//     });
-
-//     // Send events as JSON response
-//     res.json({ success: true, events: response.data.items });
-//   } catch (error) {
-//     console.error('Error fetching events:', error);
-//     res.json({ success: false, error: error.message });
-//   }
-// });
-
-// app.get('/list-events', async (req, res) => {
-//   try {
-//     const { start, end } = req.query;  // Get start and end dates from query params
-
-//     if (!start || !end) {
-//       return res.status(400).json({ success: false, message: 'Please provide both start and end dates.' });
-//     }
-
-//     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-
-//     // Fetch events between the provided start and end dates
-//     const response = await calendar.events.list({
-//       calendarId: 'primary',
-//       timeMin: new Date(start).toISOString(),  // Start of the range
-//       timeMax: new Date(end).toISOString(),    // End of the range
-//       singleEvents: true,                      // Only return single events (not recurring)
-//       orderBy: 'startTime',                    // Order events by start time
-//     });
-
-//     // Send the fetched events as JSON response
-//     res.json({ success: true, events: response.data.items });
-//   } catch (error) {
-//     console.error('Error fetching events:', error);
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
 
 app.get('/list-events', async (req, res) => {
   try {
