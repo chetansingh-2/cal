@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 
-REDIRECT_URI="https://localhost:8080/oauth2callback"
+REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
 
 app.use(cors({
   origin: '*', 
