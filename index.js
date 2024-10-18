@@ -19,6 +19,7 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 
+REDIRECT_URI="https://localhost:8080/oauth2callback"
 
 app.use(cors({
   origin: '*', 
@@ -37,7 +38,7 @@ app.use(session({
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.SECRET_ID;
-const REDIRECT_URI = process.env.REDIRECT_URI;
+const REDIRECT_URI = REDIRECT_URI;
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
   CLIENT_SECRET,
@@ -88,7 +89,7 @@ app.get('/oauth2callback', async (req, res) => {
 
     // Redirect to frontend after storing tokens
     console.log('Redirecting to frontend...');
-    res.redirect('http://localhost:3001/dashboard/calender');
+    res.redirect('http://localhost:3000/dashboard/calender');
   } 
   catch (err) {
     console.error('Error retrieving access token or fetching user info:', err); // Debugging: log error
@@ -152,7 +153,7 @@ app.delete('/delete-event/:eventId', async (req, res) => {
     const oauth2ClientForUser = new google.auth.OAuth2(
       process.env.CLIENT_ID,
       process.env.SECRET_ID,
-      process.env.REDIRECT_URI
+      REDIRECT_URI
     );
     oauth2ClientForUser.setCredentials(tokens);
 
@@ -212,7 +213,7 @@ app.post('/create-event', async (req, res) => {
     const oauth2ClientForUser = new google.auth.OAuth2(
       process.env.CLIENT_ID,
       process.env.CLIENT_SECRET,
-      process.env.REDIRECT_URI
+      REDIRECT_URI
     );
     oauth2ClientForUser.setCredentials({
       access_token: tokens.access_token,
@@ -352,7 +353,7 @@ app.get('/list-events', async (req, res) => {
     const oauth2ClientForUser = new google.auth.OAuth2(
       process.env.CLIENT_ID,
       process.env.SECRET_ID,
-      process.env.REDIRECT_URI
+      REDIRECT_URI
     );
     oauth2ClientForUser.setCredentials(tokens); // Set the user's tokens
 
