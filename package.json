@@ -18,6 +18,6 @@
     "express-session": "^1.18.1",
     "googleapis": "^144.0.0",
     "helmet": "^8.0.0",
-    "pikaday": "^1.8.2"
-  }
-}
+    "pikaday": "^1.8.2",
+    "pm2": "^5.4.2"
+  }}
