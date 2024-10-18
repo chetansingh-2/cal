@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Calendar Event Creator</title>
+  
+  <!-- Flatpickr CSS for the date picker -->
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+</head>
+<body>
+  <h1>Create an Event on Google Calendar</h1>
+
+  <label for="date-picker">Select Date:</label>
+  <input type="text" id="date-picker" placeholder="Pick a date" />
+
+  <label for="event-title">Event Title:</label>
+  <input type="text" id="event-title" placeholder="Enter event title" />
+
+  <button id="create-event">Create Event</button>
+
+  <!-- Flatpickr JS for the date picker -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  
+  <script>
+    // Initialize Flatpickr for the date picker
+    flatpickr("#date-picker", {
+      dateFormat: "Y-m-d", // Date format (Year-Month-Day)
+    });
+
+    // Handle Create Event button click
+    document.getElementById('create-event').addEventListener('click', function() {
+      const date = document.getElementById('date-picker').value;  // Get selected date
+      const title = document.getElementById('event-title').value;  // Get event title
+
+      if (date && title) {
+        // Send a request to create the event on Google Calendar
+        fetch('/create-event', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            date: date,   // Send selected date
+            title: title  // Send event title
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Event created successfully!');
+          } else {
+            alert('Error creating event: ' + data.error);
+          }
+        });
+      } else {
+        alert('Please select a date and enter an event title.');
+      }
+    });
+  </script>
+</body>
+</html>
