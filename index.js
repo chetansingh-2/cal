@@ -36,7 +36,7 @@ app.use(session({
 }));
 
 
-REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
+const REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.SECRET_ID;
