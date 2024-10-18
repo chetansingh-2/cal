@@ -19,7 +19,6 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 
-REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
 
 app.use(cors({
   origin: '*', 
@@ -36,9 +35,11 @@ app.use(session({
   }
 }));
 
+
+REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
+
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.SECRET_ID;
-const REDIRECT_URI = REDIRECT_URI;
 const oauth2Client = new google.auth.OAuth2(
   CLIENT_ID,
   CLIENT_SECRET,
