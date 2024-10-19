@@ -20,7 +20,7 @@ app.use(cors());
 app.use(helmet());
 
 
-const allowedOrigins = ['http://localhost:3000', 'https://www.candidate.live/'];
+const allowedOrigins = ['http://localhost:3001', 'https://www.candidate.live'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -83,10 +83,8 @@ app.get('/oauth2callback', async (req, res) => {
     });
 
     const userInfoResponse = await oauth2ClientWithToken.userinfo.get();
-    console.log('User info response:', userInfoResponse.data); // Debugging: log user info
 
     const email = userInfoResponse.data.email;
-    console.log('Extracted email:', email); // Debugging: log extracted email
 
     tokenStorage.set(email, {
       access_token: tokens.access_token,
@@ -94,11 +92,8 @@ app.get('/oauth2callback', async (req, res) => {
       expiry_date: tokens.expiry_date
     });
 
-    console.log(`Tokens stored for ${email}:`, tokenStorage.get(email)); // Debugging: log stored tokens
 
-    // Redirect to frontend after storing tokens
-    console.log('Redirecting to frontend...');
-    res.redirect('http://localhost:3000/dashboard/calender');
+    res.redirect('https://www.candidate.live/dashboard/calender');
   } 
   catch (err) {
     console.error('Error retrieving access token or fetching user info:', err); // Debugging: log error
@@ -110,7 +105,6 @@ app.get('/oauth2callback', async (req, res) => {
 app.get('/api/get_tokens', (req, res) => {
   const email = req.query.email;  
 
-  console.log(`Retrieving tokens for email: ${email}`);
   
   if (tokenStorage.has(email)) {
       res.json(tokenStorage.get(email));
@@ -122,7 +116,6 @@ app.get('/api/get_tokens', (req, res) => {
 app.get('/api/debug/tokenStorage', (req, res) => {
   const tokenData = Array.from(tokenStorage.entries());
   
-  console.log('Current state of tokenStorage:', JSON.stringify(tokenData, null, 2)); // Pretty-print JSON for easier reading
 
   res.json(tokenData);
 });
@@ -137,7 +130,6 @@ app.post('/api/store-tokens', (req, res) => {
 
   tokenStorage.set(email, { access_token, refresh_token, expiry_date });
 
-  console.log(`Tokens stored for ${email}:`, tokenStorage.get(email));
 
   res.status(200).send('Tokens stored successfully');
 });
@@ -149,13 +141,11 @@ app.post('/api/store-tokens', (req, res) => {
 app.delete('/delete-event/:eventId', async (req, res) => {
   const eventId = req.params.eventId;
   const { email } = req.body;  
-  console.log(`Attempting to delete event with ID: ${eventId} for user: ${email}`);
 
   try {
     const tokens = tokenStorage.get(email);
 
     if (!tokens) {
-      console.error(`No tokens found for user: ${email}`);
       return res.status(401).json({ success: false, message: 'No tokens found for this user.' });
     }
 
@@ -180,9 +170,7 @@ app.delete('/delete-event/:eventId', async (req, res) => {
           token_type: updatedTokens.token_type
         });
 
-        console.log(`Token refreshed successfully for ${email}.`);
       } catch (refreshError) {
-        console.error(`Error refreshing access token for ${email}:`, refreshError);
         return res.status(500).json({ success: false, message: 'Error refreshing access token.' });
       }
     }
@@ -194,10 +182,8 @@ app.delete('/delete-event/:eventId', async (req, res) => {
       eventId: eventId,
     });
 
-    console.log(`Event with ID: ${eventId} deleted successfully for user: ${email}`);
     res.json({ success: true, message: 'Event deleted successfully.' });
   } catch (error) {
-    console.error(`Error deleting event with ID: ${eventId} for user: ${email}`, error);
 
     res.status(500).json({ success: false, error: error.response?.data || error.message });
   }
@@ -207,17 +193,14 @@ app.delete('/delete-event/:eventId', async (req, res) => {
 app.post('/create-event', async (req, res) => {
   const { email, title, startDate, endDate, location, description, attendees } = req.body;
 
-  console.log('Received request to create event:', { email, title, startDate, endDate, location, attendees });
 
   try {
     const tokens = tokenStorage.get(email);
 
     if (!tokens) {
-      console.error(`No tokens found for user: ${email}`);
       return res.status(401).json({ success: false, message: 'No tokens found for this user.' });
     }
 
-    console.log(`Tokens found for ${email}:`, tokens);
 
     const oauth2ClientForUser = new google.auth.OAuth2(
       process.env.CLIENT_ID,
@@ -231,7 +214,6 @@ app.post('/create-event', async (req, res) => {
     });
 
     if (Date.now() >= tokens.expiry_date) {
-      console.log(`Token for ${email} has expired, attempting to refresh...`);
 
       try {
         const newTokens = await oauth2ClientForUser.refreshAccessToken();
@@ -244,9 +226,7 @@ app.post('/create-event', async (req, res) => {
           token_type: updatedTokens.token_type
         });
 
-        console.log(`Token refreshed successfully for ${email}:`, updatedTokens);
       } catch (refreshError) {
-        console.error(`Error refreshing access token for ${email}:`, refreshError);
         return res.status(500).json({ success: false, message: 'Error refreshing access token.' });
       }
     }
@@ -254,7 +234,6 @@ app.post('/create-event', async (req, res) => {
     // Filter out the organizer (email) from the attendees list
     const attendeesFiltered = attendees.filter(att => att !== email).map(att => ({ email: att.trim() }));
 
-    console.log(`Filtered attendees (without organizer):`, attendeesFiltered);
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2ClientForUser });
     const event = {
@@ -280,7 +259,6 @@ app.post('/create-event', async (req, res) => {
       },
     };
 
-    console.log(`Creating event for ${email} with details:`, event);
 
     const response = await calendar.events.insert({
       calendarId: 'primary',
@@ -289,10 +267,8 @@ app.post('/create-event', async (req, res) => {
       sendUpdates: 'all', 
     });
 
-    console.log(`Event created successfully for ${email}:`, response.data);
     res.json({ success: true, event: response.data });
   } catch (error) {
-    console.error(`Error creating event for ${email}:`, error);
     res.json({ success: false, error: error.message });
   }
 });
@@ -333,7 +309,6 @@ app.get('/list-events', async (req, res) => {
     // Send the fetched events as JSON response (keeping the response structure unchanged)
     res.json({ success: true, events: response.data.items });
   } catch (error) {
-    console.error('Error fetching events:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -353,7 +328,6 @@ app.get('/get-event/:eventId', async (req, res) => {
 
     res.json({ success: true, event: response.data });
   } catch (error) {
-    console.error('Error fetching event:', error);
     res.json({ success: false, error: error.message });
   }
 });
