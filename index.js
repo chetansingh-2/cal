@@ -20,7 +20,7 @@ app.use(cors());
 app.use(helmet());
 
 
-const allowedOrigins = ['http://localhost:3001', 'https://www.candidate.live'];
+const allowedOrigins = ['http://localhost:3001', 'http://localhost:3000','https://www.candidate.live'];
 
 app.use(cors({
   origin: function (origin, callback) {
