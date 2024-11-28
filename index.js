@@ -45,7 +45,9 @@ app.use(session({
 }));
 
 
-const REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
+// const REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
+
+const REDIRECT_URI="http://localhost:3000/oauth2callback"
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.SECRET_ID;
@@ -69,14 +71,11 @@ app.get('/', (req, res) => {
 
 app.get('/oauth2callback', async (req, res) => {
   const code = req.query.code;
-  console.log('Received authorization code:', code);
 
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    console.log('Tokens received from Google:', tokens); 
 
     oauth2Client.setCredentials(tokens);
-    console.log('Credentials set for oauth2Client.');
     const oauth2ClientWithToken = google.oauth2({
       auth: oauth2Client,
       version: 'v2'
@@ -86,17 +85,18 @@ app.get('/oauth2callback', async (req, res) => {
 
     const email = userInfoResponse.data.email;
 
+
     tokenStorage.set(email, {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expiry_date: tokens.expiry_date
     });
 
-
     res.redirect('https://www.candidate.live/dashboard/calender');
+    // res.redirect("https://google.com")
   } 
   catch (err) {
-    console.error('Error retrieving access token or fetching user info:', err); // Debugging: log error
+    console.error('Error retrieving access token or fetching user info:', err); 
     res.send('Error during authentication');
   }
 });
@@ -112,6 +112,7 @@ app.get('/api/get_tokens', (req, res) => {
       res.status(401).send('No tokens available for this email');
   }
 });
+
 
 app.get('/api/debug/tokenStorage', (req, res) => {
   const tokenData = Array.from(tokenStorage.entries());
