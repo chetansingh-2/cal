@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
     scope: ['https://www.googleapis.com/auth/calendar',    
       'https://www.googleapis.com/auth/userinfo.email' 
     ],
-    // prompt: 'consent'
+    prompt: 'consent'
   });
   res.redirect(authUrl);
 });
