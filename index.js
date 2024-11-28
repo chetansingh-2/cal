@@ -64,10 +64,12 @@ app.get('/', (req, res) => {
     scope: ['https://www.googleapis.com/auth/calendar',    
       'https://www.googleapis.com/auth/userinfo.email' 
     ],
-    prompt: 'consent'
+    // prompt: 'consent'
   });
   res.redirect(authUrl);
 });
+
+
 
 app.get('/oauth2callback', async (req, res) => {
   const code = req.query.code;
@@ -82,10 +84,7 @@ app.get('/oauth2callback', async (req, res) => {
     });
 
     const userInfoResponse = await oauth2ClientWithToken.userinfo.get();
-
     const email = userInfoResponse.data.email;
-
-
     tokenStorage.set(email, {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -102,10 +101,10 @@ app.get('/oauth2callback', async (req, res) => {
 });
 
 
+
+
 app.get('/api/get_tokens', (req, res) => {
   const email = req.query.email;  
-
-  
   if (tokenStorage.has(email)) {
       res.json(tokenStorage.get(email));
   } else {
@@ -114,12 +113,12 @@ app.get('/api/get_tokens', (req, res) => {
 });
 
 
+
 app.get('/api/debug/tokenStorage', (req, res) => {
   const tokenData = Array.from(tokenStorage.entries());
-  
-
   res.json(tokenData);
 });
+
 
 
 app.post('/api/store-tokens', (req, res) => {
@@ -189,6 +188,13 @@ app.delete('/delete-event/:eventId', async (req, res) => {
     res.status(500).json({ success: false, error: error.response?.data || error.message });
   }
 });
+
+
+
+
+
+
+
 
 
 app.post('/create-event', async (req, res) => {
@@ -332,6 +338,8 @@ app.get('/get-event/:eventId', async (req, res) => {
     res.json({ success: false, error: error.message });
   }
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
