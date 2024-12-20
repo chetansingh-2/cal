@@ -12,7 +12,7 @@ const helmet = require('helmet');
 dotenv.config();
 const app = express();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 
 app.use(express.json());
@@ -20,7 +20,9 @@ app.use(cors());
 app.use(helmet());
 
 
-const allowedOrigins = ['http://localhost:3001', 'http://localhost:3000','https://www.candidate.live'];
+const allowedOrigins = ['http://localhost:3001', 'https://www.candidate.live',
+  'http://localhost:3000'
+];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -45,9 +47,9 @@ app.use(session({
 }));
 
 
-const REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
+const REDIRECT_URI="http://localhost:3001/oauth2callback"
 
-// const REDIRECT_URI="http://localhost:3000/oauth2callback"
+// const REDIRECT_URI="http://http://localhost:3001/oauth2callback"
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.SECRET_ID;
@@ -64,7 +66,7 @@ app.get('/', (req, res) => {
     scope: ['https://www.googleapis.com/auth/calendar',    
       'https://www.googleapis.com/auth/userinfo.email' 
     ],
-    prompt: 'consent'
+    // prompt: 'consent'
   });
   res.redirect(authUrl);
 });
@@ -76,6 +78,8 @@ app.get('/oauth2callback', async (req, res) => {
 
   try {
     const { tokens } = await oauth2Client.getToken(code);
+    console.log("heyy tokens  ",tokens)
+
 
     oauth2Client.setCredentials(tokens);
     const oauth2ClientWithToken = google.oauth2({
@@ -85,6 +89,10 @@ app.get('/oauth2callback', async (req, res) => {
 
     const userInfoResponse = await oauth2ClientWithToken.userinfo.get();
     const email = userInfoResponse.data.email;
+
+    console.log("heyy  ", email)
+
+
     tokenStorage.set(email, {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -104,12 +112,16 @@ app.get('/oauth2callback', async (req, res) => {
 
 
 app.get('/api/get_tokens', (req, res) => {
-  const email = req.query.email;  
+  const email = req.query.email;
   if (tokenStorage.has(email)) {
-      res.json(tokenStorage.get(email));
-  } else {
-      res.status(401).send('No tokens available for this email');
+    return res.json(tokenStorage.get(email));
   }
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.email'],
+    prompt: 'consent',
+  });
+  res.redirect(authUrl);
 });
 
 
