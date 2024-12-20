@@ -47,7 +47,7 @@ app.use(session({
 }));
 
 
-const REDIRECT_URI="http://localhost:3001/oauth2callback"
+const REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
 
 // const REDIRECT_URI="http://http://localhost:3001/oauth2callback"
 
