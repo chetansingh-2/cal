@@ -78,7 +78,6 @@ app.get('/oauth2callback', async (req, res) => {
 
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    console.log("heyy tokens  ",tokens)
 
 
     oauth2Client.setCredentials(tokens);
@@ -90,7 +89,6 @@ app.get('/oauth2callback', async (req, res) => {
     const userInfoResponse = await oauth2ClientWithToken.userinfo.get();
     const email = userInfoResponse.data.email;
 
-    console.log("heyy  ", email)
 
 
     tokenStorage.set(email, {
@@ -99,7 +97,9 @@ app.get('/oauth2callback', async (req, res) => {
       expiry_date: tokens.expiry_date
     });
 
-    res.redirect('https://www.candidate.live/dashboard/calender');
+    // res.redirect('https://www.candidate.live/dashboard/calender');
+    res.redirect('http://localhost:3000/dashboard/calender');
+
     // res.redirect("https://google.com")
   } 
   catch (err) {
