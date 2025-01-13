@@ -97,8 +97,8 @@ app.get('/oauth2callback', async (req, res) => {
       expiry_date: tokens.expiry_date
     });
 
-    res.redirect('https://www.candidate.live/dashboard/calender');
-    // res.redirect('http://localhost:3000/dashboard/calender');
+    // res.redirect('https://www.candidate.live/dashboard/calender');
+    res.redirect('http://localhost:3000/dashboard/calender');
 
     // res.redirect("https://google.com")
   } 
