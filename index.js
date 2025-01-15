@@ -16,7 +16,6 @@ const PORT = process.env.PORT || 3001;
 
 
 app.use(express.json());
-app.use(cors());
 app.use(helmet());
 
 
@@ -49,7 +48,7 @@ app.use(session({
 
 const REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
 
-// const REDIRECT_URI="http://http://localhost:3001/oauth2callback"
+// const REDIRECT_URI="http://http://localhost:8080/oauth2callback"
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.SECRET_ID;
@@ -60,6 +59,7 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 const tokenStorage = new Map();
+
 app.get('/', (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -97,11 +97,11 @@ app.get('/oauth2callback', async (req, res) => {
       expiry_date: tokens.expiry_date
     });
 
-    // res.redirect('https://www.candidate.live/dashboard/calender');
-    res.redirect('http://localhost:3000/dashboard/calender');
+    res.redirect('https://www.candidate.live/dashboard/calender');
+    // res.redirect('http://localhost:3000/dashboard/calender');
 
-    // res.redirect("https://google.com")
   } 
+  
   catch (err) {
     console.error('Error retrieving access token or fetching user info:', err); 
     res.send('Error during authentication');
@@ -111,26 +111,52 @@ app.get('/oauth2callback', async (req, res) => {
 
 
 
+// app.get('/api/get_tokens', (req, res) => {
+//   const email = req.query.email;
+//   if (tokenStorage.has(email)) {
+//     return res.json(tokenStorage.get(email));
+//   }
+//   const authUrl = oauth2Client.generateAuthUrl({
+//     access_type: 'offline',
+//     scope: ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.email'],
+//     prompt: 'consent',
+//   });
+//   res.redirect(authUrl);
+// });
+
+
 app.get('/api/get_tokens', (req, res) => {
   const email = req.query.email;
+  
+  if (!email) {
+    return res.status(400).json({ 
+      error: 'Email required',
+      needsAuth: true 
+    });
+  }
+
   if (tokenStorage.has(email)) {
     return res.json(tokenStorage.get(email));
   }
+
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.email'],
-    prompt: 'consent',
+    scope: ['https://www.googleapis.com/auth/calendar', 
+            'https://www.googleapis.com/auth/userinfo.email'],
+    // prompt: 'consent',
   });
-  res.redirect(authUrl);
-});
 
+  return res.json({ 
+    needsAuth: true,
+    authUrl: authUrl 
+  });
+});
 
 
 app.get('/api/debug/tokenStorage', (req, res) => {
   const tokenData = Array.from(tokenStorage.entries());
   res.json(tokenData);
 });
-
 
 
 app.post('/api/store-tokens', (req, res) => {
