@@ -8,9 +8,15 @@ const session = require('express-session');
 const axios = require('axios'); 
 const oauth2 = google.oauth2('v2'); 
 const helmet = require('helmet');
+const { Pool } = require('pg');
+
 
 dotenv.config();
 const app = express();
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL  // Use your existing connection string
+});
 
 const PORT = process.env.PORT || 3001;
 
@@ -48,7 +54,7 @@ app.use(session({
 
 const REDIRECT_URI="https://cal-ydr3.onrender.com/oauth2callback"
 
-// const REDIRECT_URI="http://http://localhost:8080/oauth2callback"
+// const REDIRECT_URI="http://http://localhost:8080oauth2callback"
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.SECRET_ID;
@@ -59,6 +65,39 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 const tokenStorage = new Map();
+
+
+async function storeToken(email, tokens) {
+  const query = `
+    INSERT INTO google_calendar_tokens (email, access_token, refresh_token, expiry_date)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT (email) 
+    DO UPDATE SET 
+      access_token = $2,
+      refresh_token = $3,
+      expiry_date = $4,
+      updated_at = CURRENT_TIMESTAMP
+  `;
+  
+  await pool.query(query, [
+    email,
+    tokens.access_token,
+    tokens.refresh_token,
+    tokens.expiry_date
+  ]);
+}
+
+async function getToken(email) {
+  const result = await pool.query(
+    'SELECT * FROM google_calendar_tokens WHERE email = $1',
+    [email]
+  );
+  return result.rows[0];
+}
+
+
+//iske upr tk create and get vale functions h for db token storage
+//ab yha se baki api shuru hongi
 
 app.get('/', (req, res) => {
   const authUrl = oauth2Client.generateAuthUrl({
@@ -90,12 +129,17 @@ app.get('/oauth2callback', async (req, res) => {
     const email = userInfoResponse.data.email;
 
 
-
-    tokenStorage.set(email, {
+    await storeToken(email, {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expiry_date: tokens.expiry_date
     });
+
+    // tokenStorage.set(email, {
+    //   access_token: tokens.access_token,
+    //   refresh_token: tokens.refresh_token,
+    //   expiry_date: tokens.expiry_date
+    // });
 
     res.redirect('https://www.candidate.live/dashboard/calender');
     // res.redirect('http://localhost:3000/dashboard/calender');
@@ -110,22 +154,7 @@ app.get('/oauth2callback', async (req, res) => {
 
 
 
-
-// app.get('/api/get_tokens', (req, res) => {
-//   const email = req.query.email;
-//   if (tokenStorage.has(email)) {
-//     return res.json(tokenStorage.get(email));
-//   }
-//   const authUrl = oauth2Client.generateAuthUrl({
-//     access_type: 'offline',
-//     scope: ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.email'],
-//     prompt: 'consent',
-//   });
-//   res.redirect(authUrl);
-// });
-
-
-app.get('/api/get_tokens', (req, res) => {
+app.get('/api/get_tokens', async (req, res) => {
   const email = req.query.email;
   
   if (!email) {
@@ -135,22 +164,32 @@ app.get('/api/get_tokens', (req, res) => {
     });
   }
 
-  if (tokenStorage.has(email)) {
-    return res.json(tokenStorage.get(email));
+  try {
+    const tokens = await getToken(email);
+    if (tokens) {
+      return res.json({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expiry_date: tokens.expiry_date
+      });
+    }
+
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: ['https://www.googleapis.com/auth/calendar', 
+              'https://www.googleapis.com/auth/userinfo.email']
+    });
+
+    return res.json({ 
+      needsAuth: true,
+      authUrl: authUrl 
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: ['https://www.googleapis.com/auth/calendar', 
-            'https://www.googleapis.com/auth/userinfo.email'],
-    // prompt: 'consent',
-  });
-
-  return res.json({ 
-    needsAuth: true,
-    authUrl: authUrl 
-  });
 });
+
 
 
 app.get('/api/debug/tokenStorage', (req, res) => {
@@ -226,13 +265,6 @@ app.delete('/delete-event/:eventId', async (req, res) => {
     res.status(500).json({ success: false, error: error.response?.data || error.message });
   }
 });
-
-
-
-
-
-
-
 
 
 app.post('/create-event', async (req, res) => {
