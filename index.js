@@ -107,30 +107,30 @@ app.get('/', (req, res) => {
 });
 
 app.get('/oauth2callback', async (req, res) => {
-  const code = req.query.code;
+ const code = req.query.code;
 
-  try {
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
-    const oauth2ClientWithToken = google.oauth2({
-      auth: oauth2Client,
-      version: 'v2'
-    });
-    const userInfoResponse = await oauth2ClientWithToken.userinfo.get();
-    const email = userInfoResponse.data.email;
-       
-       
-     //storage
-    await storeToken(email, {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expiry_date: tokens.expiry_date
-    });
+ try {
+   const { tokens } = await oauth2Client.getToken(code);
+   oauth2Client.setCredentials(tokens);
+   const oauth2ClientWithToken = google.oauth2({
+     auth: oauth2Client,
+     version: 'v2'
+   });
+   const userInfoResponse = await oauth2ClientWithToken.userinfo.get();
+   const email = userInfoResponse.data.email;
 
-    res.redirect('https://www.candidate.live/dashboard/calender');
-//     res.redirect('http://localhost:3000/dashboard/calender');
+   await storeToken(email, {
+     access_token: tokens.access_token,
+     refresh_token: tokens.refresh_token,
+     expiry_date: tokens.expiry_date
+   });
 
-  }
+   res.redirect('https://www.candidate.live/dashboard/calender');
+
+ } catch (err) {
+   res.status(500).send('Error during authentication');
+ }
+});
 
 
 
